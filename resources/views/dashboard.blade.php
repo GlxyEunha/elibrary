@@ -32,7 +32,7 @@
   <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
     <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       @forelse ($books as $book)
-      <div class="bg-white border border-gray-200 rounded-lg shadow-lg p-6 flex flex-col h-full">
+      <div class="bg-white border border-gray-200 rounded-lg shadow-lg p-6 flex flex-col h-full" data-bs-toggle="modal" data-bs-target="#detailModal" data-book-id="{{ $book->id }}">
         <div class="space-y-2 flex-1">
           @if ($book->cover_image)
             <div class="flex items-center justify-center h-48 overflow-hidden">
@@ -81,13 +81,50 @@
     </div>
   </div>
 
-  <div class="modal fade" id="detailModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content" id="modalContent">
-            <!-- Isi modal akan dimuat dengan Ajax -->
+  <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="detailModalLabel">Book Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        <div class="modal-body">
+          <div id="modal-loader" class="text-center">
+            <span class="spinner-border text-primary" role="status"></span> Loading...
+          </div>
+          <div id="modal-content" style="display:none;">
+            <!-- Book Details -->
+            @if ($book->cover_image)
+            <div class="flex items-center justify-center h-48 overflow-hidden">
+              <img src="{{ asset($book->cover_image) }}" alt="Cover of {{ $book->name }}" 
+                   class="object-contain max-h-full max-w-full">
+            </div>
+            @else
+              <div class="bg-gray-200 w-full h-48 flex items-center justify-center text-gray-500">
+                No Cover Image
+              </div>
+            @endif
+            <h2 class="text-lg font-semibold">{{ $book->name }}</h2>
+            <p><strong>Category:</strong> {{ $book->category->name }}</p>
+            <p><strong>Author:</strong> {{ $book->auther->name }}</p>
+            <p><strong>Publisher:</strong> {{ $book->publisher->name }}</p>
+            @if (!empty($book->product_code))
+                @php
+                    // Generate URL untuk halaman tujuan
+                    $redirectUrl = route('librarian.detail', ['id' => $book->id]);
+                @endphp
+                <!-- Simpan URL di dalam barcode -->
+                <div>{!! DNS2D::getBarcodeHTML($redirectUrl, 'QRCODE') !!}</div>
+                <p> p - {{ $book->product_code }}</p> <!-- Tampilkan URL (opsional) -->
+            @else
+                <div>Product code is missing.</div>
+            @endif
+          </div>
+        </div>
+      </div>
     </div>
-</div>
+  </div>
+
 </main>
 <!-- Success Modal -->
 <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
@@ -122,5 +159,36 @@
   window.addEventListener("load", function(event) {
   document.querySelector('[data-dropdown-toggle="dropdown"]').click();
 });
+</script>
+<script>
+  $(document).on('click', '[data-bs-target="#detailModal"]', function () {
+      const bookId = $(this).data('book-id');
+      const modalContent = $('#modal-content');
+      const loader = $('#modal-loader');
+
+      modalContent.hide();
+      loader.show();
+
+      // Load book details using AJAX
+      $.ajax({
+          url: `/books/${bookId}/detail`, // Sesuaikan dengan route Anda
+          method: 'GET',
+          success: function (data) {
+              modalContent.html(`
+                  <h4>${data.name}</h4>
+                  <p><strong>Author:</strong> ${data.author.name}</p>
+                  <p><strong>Publisher:</strong> ${data.publisher.name}</p>
+                  <div class="text-center">${data.qr_code}</div>
+              `);
+              loader.hide();
+              modalContent.show();
+          },
+          error: function () {
+              modalContent.html('<p class="text-danger">Failed to load book details.</p>');
+              loader.hide();
+              modalContent.show();
+          }
+      });
+  });
 </script>
 @endsection

@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\book;
 use App\Models\auther;
 use App\Models\category;
+use Milon\Barcode\DNS2D;
 use App\Models\publisher;
+use Illuminate\Http\Request;
+// use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\StorebookRequest;
-// use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\Request;
 use App\Http\Requests\UpdatebookRequest;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -177,5 +178,23 @@ class BookController extends Controller
  
          return redirect()->route('librarian.books')->with('success', 'Book deleted successfully.');
      }
+
+     public function detail($id)
+    {
+        $book = Book::with(['author', 'publisher'])->findOrFail($id);
+
+        // Create an instance of DNS2D
+        $dns2d = new \Milon\Barcode\DNS2D();
+
+        // Generate QR Code
+        $qrCode = $dns2d->getBarcodeHTML(route('librarian.detail', ['id' => $book->id]), 'QRCODE');
+
+        return response()->json([
+            'name' => $book->name,
+            'author' => $book->author,
+            'publisher' => $book->publisher,
+            'qr_code' => $qrCode,
+        ]);
+    }
  }
  

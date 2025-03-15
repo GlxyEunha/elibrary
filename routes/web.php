@@ -39,6 +39,8 @@ Route::get('/', function () {
 // })->name('guest.dashboard');
 Route::get('/guest-dashboard', [BookController::class, 'indexg'])->name('guest.books');
 Route::get('/search', [BookController::class, 'search'])->name('guest.search');
+Route::get('/books/{id}/detail', [BookController::class, 'detail'])->name('books.detail');
+
 
 // Route::get('/', [CategoryController::class, 'search_category'])->name('search_category');
 
@@ -91,6 +93,7 @@ Route::middleware(['auth', 'role:student'])->group(function () {
     Route::get('/books/{id}', [BookController::class, 'show'])->name('librarian.detail');
     Route::post('/book-issue', [BookIssueController::class, 'rent'])->name('rent');
     Route::get('/status', [BookIssueController::class, 'status'])->name('status.user');
+    Route::get('/books/{id}/detail', [BookController::class, 'detail'])->name('books.detail');
 });
 
 // Rute untuk login dan logout
